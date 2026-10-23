@@ -16,7 +16,6 @@ def get_calibration_constants(df, mag="VMag"):
     x = df["BMag"] - df["VMag"]
     y = df[mag] - df[magcat]
     gradient, intercept, _, _, _ = stats.linregress(x, y)
-    print(f"{mag} gradient: {gradient:.3f}   {mag} magnitude intercept: {intercept:.3f}")
     return gradient, intercept
 
 
@@ -61,10 +60,14 @@ if __name__ == "__main__":
     # Calibrate the matched stars and calculate the calibration residuals
     vgradient, vintercept, matched_df = calibrate(matched_df, "VMag")
     vresidual = matched_df["VMagCal"] - matched_df["VMagCat"]
-    print(f"Calibration residual V: {vresidual.mean():.3f}+/-{vresidual.std():.3f}")
+    print(
+        f"Calibration V:   gradient={vgradient:.3f}   intercept={vintercept:.3f}   residual={vresidual.mean():.3f}+/-{vresidual.std():.3f}"
+    )
     bgradient, bintercept, matched_df = calibrate(matched_df, "BMag")
     bresidual = matched_df["BMagCal"] - matched_df["BMagCat"]
-    print(f"Calibration residual B: {bresidual.mean():.3f}+/-{bresidual.std():.3f}\n")
+    print(
+        f"Calibration B:   gradient={bgradient:.3f}   intercept={bintercept:.3f}   residual={bresidual.mean():.3f}+/-{bresidual.std():.3f}\n"
+    )
 
     # Apply the calibration constrants to all VB stars
     vb_df = apply_calibration_constants(vb_df, vgradient, vintercept, "VMag")
