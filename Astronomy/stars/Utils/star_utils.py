@@ -13,7 +13,6 @@ def match_stars(
     """
     Find the closest star in "cat data frame" for every star in "v data frame"
     """
-
     # Matching tolerance
     tolerance *= u.arcsec
 
@@ -31,3 +30,27 @@ def match_stars(
         matched_df[col] = cat_df.iloc[idx[matched]][col].values
     matched_df.reset_index(drop=True, inplace=True)
     return matched_df
+
+
+def gaia_to_vb(data: DataFrame) -> DataFrame:
+    """
+    Trasformation of the Gaia DR3 spectral information to the V and B (as was suggested by ChatGPT)
+
+    Args:
+        data (DataFrame): Gaia information
+
+    Returns:
+        DataFrame: The Gaia information augmented with the V and B columns
+    """
+
+    g = data["G"]
+    bp = data["BP"]
+    rp = data["RP"]
+    bprp = bp - rp
+
+    data["VMagCat"] = (
+        g + 0.02704 - 0.01424 * bprp + 0.2156 * bprp * bprp - 0.01426 * bprp * bprp * bprp
+    )
+    data["BMagCat"] = 0.006 + 0.759 * bprp + data["VMagCat"]
+
+    return data

@@ -42,6 +42,7 @@ if __name__ == "__main__":
     v_df = pd.read_csv(argv[1])
     b_df = pd.read_csv(argv[2])
     cat_df = pd.read_csv(argv[3])
+    # cat_df = su.gaia_to_vb(cat_df)
 
     # Match V and B stars
     BGNOISE = 0.0004
