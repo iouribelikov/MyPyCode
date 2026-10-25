@@ -53,7 +53,8 @@ if __name__ == "__main__":
     print(f"Number of matched VB stars: {len(vb_df)}")
 
     # Match VB stars to calalog
-    matched_df = su.match_stars(vb_df, cat_df, {"VMagCat", "BMagCat"})
+    sel = np.isnan(cat_df["VMagCat"]) + np.isnan(cat_df["BMagCat"])
+    matched_df = su.match_stars(vb_df, cat_df[~sel], {"VMagCat", "BMagCat"})
     print(f"Total number of catalog stars: {len(cat_df)}")
     print(f"Number of VB stars matched to catalog: {len(matched_df)}\n")
 
