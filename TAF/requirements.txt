@@ -3,4 +3,6 @@ pandas
 numpy
 matplotlib
 argparse
+uproot
+awkward-pandas
 

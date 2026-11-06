@@ -1,0 +1,12 @@
+info:
+  experiment: CLINM
+  campaign: CNAO April 2025
+  beam:
+    particle: 12C
+    energy: 119.5 MeV/u
+  runs: [1, 2, 3, 4, 5]
+input:
+  file: ../TestReadFile/data.root
+  tree: tree
+  branches: [fX, fY] #null
+
