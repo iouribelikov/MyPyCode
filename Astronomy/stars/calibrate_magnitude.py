@@ -3,29 +3,45 @@
 Calibrate the magnitude
 """
 
-from sys import argv
+from argparse import ArgumentParser
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import star_utils as su
 
 if __name__ == "__main__":
-    if len(argv) != 3:
-        print(f"Usage: {argv[0]} my_stars.csv catalog_stars.csv")
-        exit()
+    parser = ArgumentParser(
+        # prog="calibrate_magnitude.py",
+        description="Description of the program",
+        epilog="Text at the bottom of help",
+    )
+    parser.add_argument("my_stars_csv", metavar="my_stars.csv", help="file with my stars")
+    parser.add_argument("cat_stars_csv", metavar="cat_stars.csv", help="file with catalog stars")
+    parser.add_argument(
+        "-bg", "--background", type=float, default=0.0, help="background value [0,1]"
+    )
+    parser.add_argument(
+        "-bgnoise",
+        "--background_noise",
+        type=float,
+        default=2.0e-4,
+        help="background noise value [0,1]",
+    )
+    args = parser.parse_args()
+    # print(args)
 
     # Read the CSV files
-    v_df = pd.read_csv(argv[1])
-    cat_df = pd.read_csv(argv[2])
+    v_df = pd.read_csv(args.my_stars_csv)
+    cat_df = pd.read_csv(args.cat_stars_csv)
 
     # Match stars
     sel = np.isnan(cat_df["VMagCat"])
     matched_df = su.match_stars(v_df, cat_df[~sel], {"VMagCat", "BMagCat"})
 
     # Calculate the magnitude offset
-    BGNOISE = 0.0004
-    THRESHOLD = 7 * BGNOISE
-    selection1 = (matched_df["VA"] < 1.0) & (matched_df["VA"] > THRESHOLD)
+    THRESHOLD_LOW = 7 * args.background_noise
+    THRESHOLD_UP = 1 - args.background
+    selection1 = (matched_df["VA"] < THRESHOLD_UP) & (matched_df["VA"] > THRESHOLD_LOW)
     deltaVMag = (matched_df["VMag"] - matched_df["VMagCat"])[selection1]
 
     voffset = deltaVMag.mean()
@@ -38,13 +54,14 @@ if __name__ == "__main__":
     # Save to a new CSV file
     matched_df.to_csv("matched_stars.csv", index=False)
 
-    selection2 = (v_df["VA"] < 1.0) & (v_df["VA"] > THRESHOLD)
+    selection2 = (v_df["VA"] < THRESHOLD_UP) & (v_df["VA"] > THRESHOLD_LOW)
     mag = v_df[selection2]["VMag"]
     a = v_df[selection2]["VA"]
     maga = 2.5 * np.log10(a)
-    vsel = v_df["VA"] < 8 * BGNOISE
+    vsel = v_df["VA"] < THRESHOLD_LOW + args.background_noise
     vlim = mag[vsel]
-    valim = maga[vsel]
+    mrange = maga.max() - maga.min()
+    effective = mrange / (2.5 * np.log10(THRESHOLD_UP / THRESHOLD_LOW)) * 100
 
     # Print results
     print(f"\nTotal number of my stars: {len(v_df)}")
@@ -52,7 +69,7 @@ if __name__ == "__main__":
     print(f"Number of my stars matched to catalog: {len(matched_df)}\n")
     print(f"Magnitude calibration offset: {offset:.3f} +/- {sigma:.3f}")
     print(
-        f"Limiting magnitude V: {vlim.median():.3f}+/-{vlim.std():.3f}   Magnitude V range: {abs(valim.median()):.3f}   for {len(vlim)} stars\n"
+        f"Magnitude V range: {mrange:.3f} ({effective:.1f}% of effective)   Limiting magnitude V: {vlim.median():.3f}+/-{vlim.std():.3f}   for {len(vlim)} stars\n"
     )
 
     # Plot results
